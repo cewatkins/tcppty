@@ -8,6 +8,8 @@
 #define DCE_CL_LE 16
 #define DCE_CL_RI 32
 
+#include "pty.h"
+
 /* This is a cool piece of code found by Chris Osborn (fozztexx@fozztexx.com) from
  * https://graphics.stanford.edu/~seander/bithacks.html#ParityWith64Bits  that
  * computes even parity for any 8 bit data value
@@ -35,6 +37,7 @@ typedef struct dce_config {
   int port_speed;
   int parity;
   int is_ip232;
+  int is_pty;
   char tty[256];
   int ifd;
   int ofd;
@@ -45,6 +48,7 @@ typedef struct dce_config {
   int ip232_dcd;
   int ip232_iac;
   int ip232_ri;
+  pty_config pty_data;
 } dce_config;
 
 void dce_init_config(dce_config *cfg);

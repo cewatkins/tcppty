@@ -7,6 +7,18 @@ Internet.  TCPSER supports all standard Hayes commands, and understands
 extended and vendor proprietary commands (though it does not implement
 many of them).  TCPSER can be used for both inbound and outbound connections.
 
+**NEW: Pseudo Terminal (PTY) Support** - TCPSER now supports creating pseudo 
+terminals instead of requiring physical serial ports. Use the `-P` option to 
+create a PTY device that provides the same Hayes modem functionality. See 
+`PTY_README.md` for detailed documentation.cation
+
+TCPSER turns a PC serial port into an emulated Hayes compatible modem that 
+uses TCP/IP for incoming and outgoing connections.  It can be used to allow 
+older applications and systems designed for modem use to operate on the
+Internet.  TCPSER supports all standard Hayes commands, and understands
+extended and vendor proprietary commands (though it does not implement
+many of them).  TCPSER can be used for both inbound and outbound connections.
+
 ## License
 
 TCPSER is distributed under the GPL 2.0 or later

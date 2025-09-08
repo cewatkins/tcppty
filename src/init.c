@@ -22,11 +22,12 @@ void print_help(char* name) {
   fprintf(stderr, "  -V   print version number\n");
   fprintf(stderr, "\n");
   fprintf(stderr, "  The following can be repeated for each modem desired\n");
-  fprintf(stderr, "  (all except -d and -v will apply to any subsequent modem if not set again)\n");
+  fprintf(stderr, "  (all except -d, -v, and -P will apply to any subsequent modem if not set again)\n");
   fprintf(stderr, "\n");
   fprintf(stderr, "  -d   serial device (e.g. /dev/ttyS0)\n");
   fprintf(stderr, "  -v   [ip address:]tcp port (or '-' for STDIN/OUT) for virtual RS232\n");
-  fprintf(stderr, "       Only 1 of -d or -v can be used per modem definition\n");
+  fprintf(stderr, "  -P   pseudo terminal (PTY) device name hint (optional)\n");
+  fprintf(stderr, "       Only 1 of -d, -v, or -P can be used per modem definition\n");
   fprintf(stderr, "  -s   serial port speed (defaults to 38400)\n");
   fprintf(stderr, "  -S   speed modem will report (defaults to -s value)\n");
   fprintf(stderr, "  -I   invert DCD pin\n");
@@ -64,7 +65,7 @@ int init(int argc,
   cfg[0].line_speed = 38400;
 
   while(opt>-1 && i < max_modem) {
-    opt=getopt(argc, argv, "p:s:S:d:v:hw:i:Il:L:t:n:a:A:c:C:N:B:T:D:V");
+    opt=getopt(argc, argv, "p:s:S:d:v:P:hw:i:Il:L:t:n:a:A:c:C:N:B:T:D:V");
     switch(opt) {
       case 't':
         trace_flags = log_get_trace_flags();
@@ -146,6 +147,7 @@ int init(int argc,
         break;
       case 'd':
       case 'v':
+      case 'P':
         if (tty_set) {
           if (++i < max_modem) {
             dce_set = FALSE;
@@ -153,6 +155,7 @@ int init(int argc,
             cfg[i].dce_data.port_speed = cfg[i - 1].dce_data.port_speed;
             cfg[i].line_speed = cfg[i - 1].line_speed;
             cfg[i].dce_data.is_ip232 = FALSE;
+            cfg[i].dce_data.is_pty = FALSE;
             strncpy((char *)cfg[i].cur_line, (char *)cfg[i - 1].cur_line, sizeof(cfg[i].cur_line));
             strncpy((char *)cfg[i].local_connect, (char *)cfg[i - 1].local_connect, sizeof(cfg[i].local_connect));
             strncpy((char *)cfg[i].remote_connect, (char *)cfg[i - 1].remote_connect, sizeof(cfg[i].remote_connect));
@@ -167,7 +170,16 @@ int init(int argc,
         }
         strncpy((char *)cfg[i].dce_data.tty, optarg, sizeof(cfg[i].dce_data.tty));
         LOG(LOG_ALL, "Setting TTY to %s", optarg);
-        cfg[i].dce_data.is_ip232 = ('v' == opt);
+        if ('v' == opt) {
+          cfg[i].dce_data.is_ip232 = TRUE;
+          cfg[i].dce_data.is_pty = FALSE;
+        } else if ('P' == opt) {
+          cfg[i].dce_data.is_ip232 = FALSE;
+          cfg[i].dce_data.is_pty = TRUE;
+        } else {
+          cfg[i].dce_data.is_ip232 = FALSE;
+          cfg[i].dce_data.is_pty = FALSE;
+        }
         tty_set = TRUE;
         break;
       case 'S':

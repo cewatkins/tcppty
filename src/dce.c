@@ -5,12 +5,15 @@
 
 #include "debug.h"
 #include "serial.h"
+#include "pty.h"
 #include "modem_core.h"
 #include "ip232.h"      // needs modem_core.h
 #include "dce.h"
 
 void dce_init_config(dce_config *cfg) {
   cfg->parity = -1;  // parity not yet checked.
+  cfg->is_pty = FALSE;  // Initialize PTY flag
+  cfg->pty_data.is_connected = FALSE;
 }
 
 int detect_parity (int charA, int charT) {
@@ -34,6 +37,13 @@ int dce_connect(dce_config *cfg) {
   LOG_ENTER();
   if (cfg->is_ip232) {
     rc = ip232_init_conn(cfg);
+  } else if (cfg->is_pty) {
+    rc = pty_init_conn(cfg->tty, cfg->port_speed, &cfg->pty_data);
+    if(-1 < rc) {
+      cfg->is_connected = TRUE;
+      cfg->ofd = rc;  // master fd for writing
+      cfg->ifd = rc;  // master fd for reading
+    }
   } else {
     rc = ser_init_conn(cfg->tty, cfg->port_speed);
     if(-1 < rc) {
@@ -67,6 +77,8 @@ int dce_set_flow_control(dce_config *cfg, int opts) {
 
   if (cfg->is_ip232) {
     rc = ip232_set_flow_control(cfg, status);
+  } else if (cfg->is_pty) {
+    rc = pty_set_flow_control(cfg->ofd, status);
   } else {
     rc = ser_set_flow_control(cfg->ofd, status);
   }
@@ -98,6 +110,8 @@ int dce_set_control_lines(dce_config *cfg, int state) {
 
   if (cfg->is_ip232) {
     rc = ip232_set_control_lines(cfg, state);
+  } else if (cfg->is_pty) {
+    rc = pty_set_control_lines(cfg->ofd, state);
   } else {
     rc = ser_set_control_lines(cfg->ofd, state);
   }
@@ -111,6 +125,8 @@ int dce_get_control_lines(dce_config *cfg) {
 
   if (cfg->is_ip232) {
     state = ip232_get_control_lines(cfg);
+  } else if (cfg->is_pty) {
+    state = pty_get_control_lines(cfg->ifd);
   } else {
     state = ser_get_control_lines(cfg->ifd);
   }
@@ -141,6 +157,9 @@ int dce_write(dce_config *cfg, unsigned char data[], int len) {
   log_trace(TRACE_SERIAL_OUT, data, len);
   if (cfg->is_ip232) {
     return ip232_write(cfg, data, len);
+  } else if (cfg->is_pty) {
+    // PTY doesn't need parity handling typically
+    return pty_write(cfg->ofd, data, len);
   } else if(cfg->parity) {
     buf = malloc(len);  // TODO what if malloc fails?
     memcpy(buf, data, len);
@@ -165,6 +184,8 @@ int dce_write_char_raw(dce_config *cfg, unsigned char data) {
   log_trace(TRACE_SERIAL_OUT, &data, 1);
   if (cfg->is_ip232) {
     rc = ip232_write(cfg, &data, 1);
+  } else if (cfg->is_pty) {
+    rc = pty_write(cfg->ofd, &data, 1);
   } else {
     rc = ser_write(cfg->ofd, &data, 1);
   }
@@ -177,6 +198,8 @@ int dce_read(dce_config *cfg, unsigned char data[], int len) {
 
   if (cfg->is_ip232) {
     res = ip232_read(cfg, data, len);
+  } else if (cfg->is_pty) {
+    res = pty_read(cfg->ifd, data, len);
   } else {
     res = ser_read(cfg->ifd, data, len);
   }
@@ -198,6 +221,8 @@ int dce_read_char_raw(dce_config *cfg) {
 
   if (cfg->is_ip232) {
     res = ip232_read(cfg, data, 1);
+  } else if (cfg->is_pty) {
+    res = pty_read(cfg->ifd, data, 1);
   } else {
     res = ser_read(cfg->ifd, data, 1);
   }
