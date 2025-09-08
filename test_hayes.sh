@@ -1,7 +1,7 @@
 #!/bin/bash
 # Test script for tcpser PTY Hayes modem functionality
 
-PTY_DEVICE="/dev/pts/11"
+PTY_DEVICE="/dev/pts/15"
 
 echo "Testing Hayes AT commands on PTY device: $PTY_DEVICE"
 
