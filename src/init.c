@@ -26,7 +26,7 @@ void print_help(char* name) {
   fprintf(stderr, "\n");
   fprintf(stderr, "  -d   serial device (e.g. /dev/ttyS0)\n");
   fprintf(stderr, "  -v   [ip address:]tcp port (or '-' for STDIN/OUT) for virtual RS232\n");
-  fprintf(stderr, "  -P   pseudo terminal (PTY) device name hint (optional)\n");
+  fprintf(stderr, "  -P   pseudo terminal (PTY) - auto-create or specify device (e.g. /dev/pts/15)\n");
   fprintf(stderr, "       Only 1 of -d, -v, or -P can be used per modem definition\n");
   fprintf(stderr, "  -s   serial port speed (defaults to 38400)\n");
   fprintf(stderr, "  -S   speed modem will report (defaults to -s value)\n");

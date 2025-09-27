@@ -6,21 +6,30 @@ This implementation adds pseudo terminal (PTY) support to tcpser, allowing you t
 
 ## New Command Line Option
 
-The `-P` option has been added to create a pseudo terminal:
+The `-P` option has been added to create or use a pseudo terminal:
 
 ```
--P   pseudo terminal (PTY) device name hint (optional)
+-P   pseudo terminal (PTY) - auto-create or specify device (e.g. /dev/pts/15)
 ```
 
 ## Usage Examples
 
-### Basic PTY Usage
+### Auto-Create PTY (Original Behavior)
 ```bash
 # Create a PTY modem listening on default port 6400
 ./tcpser -P mymodem -s 38400
 
 # Create a PTY modem with specific TCP port
 ./tcpser -P mymodem -s 38400 -p 2323
+```
+
+### Specify Existing PTY Device
+```bash
+# Use a specific PTY device
+./tcpser -P /dev/pts/15 -s 38400
+
+# Use a specific PTY device with custom TCP port
+./tcpser -P /dev/pts/20 -s 38400 -p 2323
 ```
 
 ### Multiple Modems (PTY + Serial)
@@ -31,10 +40,11 @@ The `-P` option has been added to create a pseudo terminal:
 
 ## How It Works
 
-1. **PTY Creation**: When using `-P`, tcpser creates a pseudo terminal pair
-2. **Device Output**: The slave PTY device name is displayed (e.g., `/dev/pts/13`)
-3. **Hayes Commands**: Connect to the slave device to send AT commands
-4. **Network Bridge**: Commands like `ATDT hostname:port` establish TCP connections
+1. **Auto-Create Mode**: When using `-P` with a name hint (e.g., `-P mymodem`), tcpser creates a pseudo terminal pair automatically
+2. **Specify Mode**: When using `-P` with a device path (e.g., `-P /dev/pts/15`), tcpser opens the specified PTY device
+3. **Device Output**: The PTY device name is displayed (e.g., `Pseudo terminal device: /dev/pts/13`)
+4. **Hayes Commands**: Connect to the PTY device to send AT commands
+5. **Network Bridge**: Commands like `ATDT hostname:port` establish TCP connections
 
 ## Testing Hayes Functionality
 
@@ -51,12 +61,24 @@ screen /dev/pts/13 38400
 
 ### Method 3: Direct echo/cat test
 ```bash
+# For auto-created PTY, use the device shown in tcpser output
+# For specified PTY, use the device you specified
+
 # In one terminal, read responses
-cat /dev/pts/13 &
+cat /dev/pts/15 &
 
 # In another terminal, send commands
-echo -e "AT\r" > /dev/pts/13
-echo -e "ATDT example.com:23\r" > /dev/pts/13
+echo -e "AT\r" > /dev/pts/15
+echo -e "ATDT example.com:23\r" > /dev/pts/15
+```
+
+### Method 4: Using socat to create PTY pairs
+```bash
+# Create a PTY pair with socat for testing
+socat -d -d pty,raw,echo=0 pty,raw,echo=0
+
+# Use one of the PTY devices with tcpser
+./tcpser -P /dev/pts/16 -s 38400
 ```
 
 ## Common Hayes Commands
